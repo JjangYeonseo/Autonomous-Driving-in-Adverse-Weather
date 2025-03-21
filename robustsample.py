@@ -222,6 +222,14 @@ class WeatherRobustDataset(Dataset):
                 if sample['label_path'] and os.path.exists(sample['label_path']):
                     camera_label = load_json_data(sample['label_path'])
                     data_dict['camera_label'] = camera_label
+                    
+                    # Count object types in camera label
+                    object_counts = {}
+                    for obj in camera_label.get('shapes', []):
+                        label = obj.get('label')
+                        if label:
+                            object_counts[label] = object_counts.get(label, 0) + 1
+                    data_dict['object_counts'] = object_counts
             except Exception as e:
                 print(f"Error loading image or label: {e}")
         
@@ -276,6 +284,8 @@ if __name__ == "__main__":
             elif key == 'lidar':
                 for lidar_type, lidar_data in value.items():
                     print(f"LiDAR {lidar_type} shape: {lidar_data['data'].shape}")
+            elif key == 'object_counts':
+                print(f"Object counts: {value}")
             else:
                 print(f"{key}: {value}")
         
