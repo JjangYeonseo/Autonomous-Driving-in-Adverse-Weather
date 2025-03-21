@@ -25,7 +25,7 @@ The data is organized into two main categories:
 
 ```
 traindata/
-├── 라벨링데이터/
+├── labellingdata/
 │   ├── TL_Hazy/
 │   │   └── Hazy/
 │   │       ├── Day/
@@ -74,7 +74,7 @@ traindata/
 │           │   ├── Lidar_Right/
 │           │   └── Right/
 │           └── Night/
-└── 원천데이터/
+└── sourcedata/
     ├── TS_Hazy/
     │   └── Hazy/
     │       ├── Day/
