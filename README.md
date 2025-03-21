@@ -6,7 +6,6 @@ This project aims to develop a deep learning model that allows autonomous vehicl
 - [Project Overview](#project-overview)
 - [Data Structure](#data-structure)
 - [Goal](#goal)
-- [Installation Instructions](#installation-instructions)
 - [Model Architecture](#model-architecture)
 - [Usage](#usage)
 
@@ -143,14 +142,6 @@ The objective of this project is to create a model that enables autonomous vehic
 - **Object Detection**: Detect road objects accurately even in challenging weather conditions.
 - **Segmentation**: Perform pixel-level segmentation of objects.
 - **Robustness**: Ensure the model performs well across different weather conditions like rain, snow, and fog.
-
-## Installation Instructions
-
-1. Install Python 3.x or higher.
-2. Clone the repository:
-   git clone https://github.com/your-username/weather-robust-autonomous-driving.git
-3. Install the required libraries:
-   pip install -r requirements.txt
 
 ## Model Architecture
 
