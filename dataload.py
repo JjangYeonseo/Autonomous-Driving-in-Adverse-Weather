@@ -56,8 +56,8 @@ def visualize_data_sample(image_path, json_path, pcd_path=None):
 # 경로 설정
 image_path = r"path.jpg"
 json_path = r"path.json"
-pcd_path = r"path.pcd" 
-# (path 파일은 형식만 다르고 전부 동일한 소스여야 이미지 매칭 가능)
+pcd_path = r"path.pcd"
+#(path파일은 전부 경로만 다르고 동일한 소스여야 이미지 매칭 가능)
 
 # 데이터 시각화
 visualize_data_sample(image_path, json_path, pcd_path)
