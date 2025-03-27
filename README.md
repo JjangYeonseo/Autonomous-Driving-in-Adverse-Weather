@@ -1,27 +1,144 @@
-# Weather-Robust Autonomous Driving Model
+# 🚗 Robust Object Detection in Adverse Weather Conditions
 
-This project aims to develop a deep learning model that allows autonomous vehicles to drive robustly under various weather conditions (e.g., rain, snow, fog). The model is trained on a dataset that includes images and LiDAR point cloud data, helping the model learn to detect objects and drive safely in adverse weather scenarios.
+This project aims to develop a multimodal deep learning model for object detection that remains **robust under adverse weather conditions**, including fog, rain, snow, and night-time scenarios.
 
-## Table of Contents
-- [Project Overview](#project-overview)
-- [Data Structure](#data-structure)
-- [Goal](#goal)
-- [Model Architecture](#model-architecture)
-- [Usage](#usage)
+By fusing **camera (image)** and **LiDAR (point cloud)** data, the model can maintain high perception accuracy even in low-visibility environments—making it suitable for real-world autonomous driving applications.
 
----
+## 🎯 Project Objectives
 
-## Project Overview
+- Build a robust object detection model for various weather and lighting conditions
+- Fuse image (RGB) and LiDAR (BEV) data to enhance detection reliability
+- Use polygon-based annotation files for both image and LiDAR
+- Align with real-world sensor configurations and environmental diversity
 
-The goal of this project is to create a model that helps autonomous driving systems perform robustly even in bad weather conditions. The dataset contains images from various weather scenarios as well as LiDAR data, which will be used to train the model to identify objects and navigate safely through different weather conditions.
+## 🧰 Requirements & Environment Setup
 
-## Data Structure
+### 1. Python Version
+- Python 3.9 (recommended via Anaconda)
+
+### 2. Package Installation
+
+Install all dependencies using:
+
+```bash
+pip install -r requirements.txt
+```
+
+Key packages:
+- `torch`, `torchvision` (CUDA 11.8 compatible)
+- `open3d` (for processing `.pcd` files)
+- `opencv-python`, `numpy`, `pandas`, `matplotlib`, `scikit-learn`, `pyyaml`, `seaborn`, `tqdm`
+
+### 3. CUDA Support
+
+- Tested with CUDA driver **12.8.1**
+- PyTorch uses **CUDA 11.8 build**, which runs smoothly on higher versions
+
+## 📁 Project Structure
+
+```
+project/
+├── configs/
+│   └── config.yaml              # Main configuration file
+│
+├── data/
+│   ├── dataset.py               # Custom PyTorch Dataset (Image + LiDAR)
+│   └── preprocessing/           # Auto-generated after preprocessing
+│       ├── cleaned_data.csv     # Valid data samples
+│       └── classes.txt          # List of all object classes
+│
+├── model/
+│   └── fusion_model.py          # Fusion model (Image + LiDAR)
+│
+├── scripts/
+│   ├── preprocess_data.py       # Cleans dataset, extracts classes
+│   ├── train.py                 # Trains the fusion model
+│   ├── test.py                  # Runs inference on test set
+│   ├── evaluate.py              # Calculates accuracy and confusion matrix
+│   └── run_pipeline.py          # Automates training → testing → evaluation → visualization
+│
+├── utils/
+│   ├── lidar_utils.py           # Converts .pcd → BEV images
+│   └── visualization.py         # Saves image predictions as visual output
+│
+├── checkpoints/                 # Model weights saved during training
+├── outputs/                     # Predictions, confusion matrix, and visualizations
+└── requirements.txt             # Python dependencies
+```
+
+## 🚀 Pipeline: Step-by-Step Guide
+
+### Step 1: Preprocess the dataset
+```bash
+python scripts/preprocess_data.py
+```
+- Filters out invalid labels
+- Creates `cleaned_data.csv` and `classes.txt`
+- You must **edit `num_classes` in `config.yaml`** based on the number of lines in `classes.txt`
+
+### Step 2: Train the model
+```bash
+python scripts/train.py --config configs/config.yaml
+```
+- Checkpoints are saved to `checkpoints/epoch_*.pt`
+
+### Step 3: Test the model
+```bash
+python scripts/test.py --config configs/config.yaml
+```
+- Predictions are saved to `outputs/test_results.csv`
+
+### Step 4: Evaluate performance
+```bash
+python scripts/evaluate.py
+```
+- Shows classification report and saves `confusion_matrix.png`
+
+### Step 5: Visualize predictions
+```python
+from utils.visualization import visualize_predictions
+import yaml
+config = yaml.safe_load(open("configs/config.yaml"))
+visualize_predictions(config, sample_count=10)
+```
+- Saves annotated images to `outputs/vis/`
+
+### One Command for Everything (recommended!)
+```bash
+python scripts/run_pipeline.py
+```
+Runs the full pipeline: **Training → Testing → Evaluation → Visualization**
+
+## 💡 Benefits
+
+- Maintains high object detection performance in harsh weather
+- Combines image + LiDAR input to compensate for low visibility
+- Robust to noise, direction, and environmental variety
+- Can be extended to real-time deployment or 3D perception models
+
+## 🔮 Expected Outcomes
+
+- Test accuracy target: **80%+**
+- Class-wise performance analysis via confusion matrix
+- Visual confirmation of predicted vs ground truth labels
+
+## 📌 Notes
+
+- `data/preprocessing/` and `outputs/` folders are created automatically
+- It is recommended to add these folders to `.gitignore` if pushing to GitHub:
+
+```
+outputs/
+data/preprocessing/
+checkpoints/
+```
+## cf) Source Data Structure
 
 The data is organized into two main categories:
 1. **Labeling Data**: JSON files containing object and segmentation information for each image in different weather conditions.
 2. **Raw Data**: Images in JPG format and LiDAR data in PCD format.
 
-### Training Data Structure
+## cf) Training Data Structure
 
 ```
 traindata/
@@ -134,30 +251,3 @@ traindata/
             │   └── Right/
             └── Night/
 ```
-
-
-## Goal
-
-The objective of this project is to create a model that enables autonomous vehicles to maintain robust performance under various weather conditions. The model aims to:
-- **Object Detection**: Detect road objects accurately even in challenging weather conditions.
-- **Segmentation**: Perform pixel-level segmentation of objects.
-- **Robustness**: Ensure the model performs well across different weather conditions like rain, snow, and fog.
-
-## Model Architecture
-
-This project utilizes Mask R-CNN for object detection and segmentation, as well as PointNet or PointNet++ for processing LiDAR data. An additional weather transformation network is implemented to ensure robustness across different weather conditions.
-
-## Model Flow:
-
-The model takes images and LiDAR data as input and performs object detection and segmentation.
-A weather adaptation layer ensures that the model remains robust when exposed to different weather conditions.
-
-## Usage
-### Training
-
-1. Prepare the dataset and start training:
-   python train.py --dataset <path_to_dataset> --epochs 50 --batch_size 4
-### Inference
-
-1. Run inference with the trained model:
-   python predict.py --image <path_to_image> --model <path_to_trained_model>
