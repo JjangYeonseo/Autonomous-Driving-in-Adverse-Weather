@@ -1,0 +1,116 @@
+import subprocess
+import os
+import yaml
+import re
+import datetime
+import pandas as pd
+
+CONFIG_PATH = "configs/config.yaml"
+CHECKPOINT_BASE_DIR = "checkpoints/"
+LOG_DIR = "logs"
+EXPERIMENT_LOG = os.path.join(LOG_DIR, "experiment_log.csv")
+
+def run_command(cmd):
+    print(f"\n▶ 실행: {cmd}")
+    result = subprocess.run(cmd, shell=True)
+    if result.returncode != 0:
+        print(f"❌ 오류 발생: {cmd}")
+        exit(1)
+
+def get_latest_checkpoint():
+    if not os.path.exists(CHECKPOINT_BASE_DIR):
+        return None
+    run_dirs = [d for d in os.listdir(CHECKPOINT_BASE_DIR) if d.startswith("run_")]
+    if not run_dirs:
+        return None
+    latest_run = sorted(run_dirs)[-1]
+    latest_dir = os.path.join(CHECKPOINT_BASE_DIR, latest_run)
+    pt_files = [f for f in os.listdir(latest_dir) if f.endswith(".pt")]
+    if not pt_files:
+        return None
+    pt_files.sort(key=lambda x: int(re.findall(r'\d+', x)[-1]))
+    return os.path.join(latest_dir, pt_files[-1]), latest_dir
+
+def update_config_model_path(config_path, model_path):
+    with open(config_path, 'r', encoding='utf-8') as f:
+        config = yaml.safe_load(f)
+    config['test'] = {'model_path': model_path}
+    with open(config_path, 'w', encoding='utf-8') as f:
+        yaml.dump(config, f)
+    print(f"✅ config.yaml에 model_path 업데이트됨: {model_path}")
+    return config
+
+def save_config_log(config, save_dir):
+    os.makedirs(LOG_DIR, exist_ok=True)
+    timestamp = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+
+    # 1. config 복사 저장
+    config_copy_path = os.path.join(LOG_DIR, f"config_{timestamp}.yaml")
+    with open(config_copy_path, 'w', encoding='utf-8') as f:
+        yaml.dump(config, f)
+
+    # 2. 요약 텍스트 로그 저장
+    summary_path = os.path.join(LOG_DIR, f"summary_{timestamp}.txt")
+    with open(summary_path, "w", encoding="utf-8") as f:
+        f.write(f"🕒 실행 시간: {timestamp}\n")
+        f.write(f"📁 저장 경로: {save_dir}\n")
+        f.write(f"🔢 샘플 수: {config['dataset'].get('sample_size', 'ALL')}\n")
+        f.write(f"🎯 클래스 수: {config['model']['num_classes']}\n")
+        f.write(f"📦 배치 크기: {config['train']['batch_size']}\n")
+        f.write(f"📚 에폭 수: {config['train']['epochs']}\n")
+        f.write(f"🚀 학습률: {config['train']['lr']}\n")
+        f.write(f"🧪 테스트 모델: {config['test']['model_path']}\n")
+
+    # 3. 실험 이력 CSV에 누적
+    row = {
+        'time': timestamp,
+        'samples': config['dataset'].get('sample_size', 'ALL'),
+        'classes': config['model']['num_classes'],
+        'batch_size': config['train']['batch_size'],
+        'epochs': config['train']['epochs'],
+        'lr': config['train']['lr'],
+        'ckpt_path': config['test']['model_path']
+    }
+    if not os.path.exists(EXPERIMENT_LOG):
+        pd.DataFrame([row]).to_csv(EXPERIMENT_LOG, index=False)
+    else:
+        df = pd.read_csv(EXPERIMENT_LOG)
+        df = pd.concat([df, pd.DataFrame([row])], ignore_index=True)
+        df.to_csv(EXPERIMENT_LOG, index=False)
+
+    print(f"📚 로그 저장 완료 → {summary_path}, {EXPERIMENT_LOG}")
+
+def main():
+    print("🚀 Robust Detection Pipeline 시작")
+
+    # 1. 학습
+    run_command(f"python scripts/train.py --config {CONFIG_PATH}")
+
+    # 2. 체크포인트 경로 탐색
+    latest_ckpt, run_dir = get_latest_checkpoint()
+    if not latest_ckpt:
+        print("❌ 체크포인트를 찾을 수 없습니다.")
+        return
+
+    # 3. config.yaml에 테스트 모델 경로 업데이트
+    config = update_config_model_path(CONFIG_PATH, latest_ckpt)
+
+    # 4. 로그 저장
+    save_config_log(config, run_dir)
+
+    # 5. 테스트
+    run_command(f"python scripts/test.py --config {CONFIG_PATH}")
+
+    # 6. 평가
+    run_command("python scripts/evaluate.py")
+
+    # 7. 시각화
+    run_command(f"python -c \"import yaml; "
+                f"from utils.visualization import visualize_predictions; "
+                f"config=yaml.safe_load(open('{CONFIG_PATH}', encoding='utf-8')); "
+                f"visualize_predictions(config, sample_count=10)\"")
+
+    print("\n🎉 전체 파이프라인 완료!")
+
+if __name__ == "__main__":
+    main()
