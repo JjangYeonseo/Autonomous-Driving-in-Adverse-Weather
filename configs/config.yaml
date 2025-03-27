@@ -1,1 +1,19 @@
+dataset:
+  classes_path: data/preprocessing/classes.txt
+  csv_path: data/preprocessing/cleaned_data.csv
+  sample_size: 10000         # 사용할 샘플 수
+  random_state: 42         # 동일한 샘플링을 원할 경우 숫자 지정, 랜덤이면 null
+
+model:
+  num_classes: 24
+
+train:
+  batch_size: 4
+  lr: 0.0001
+  epochs: 10
+  checkpoint_dir: checkpoints/
+  resume_path: ""            # 이어서 학습할 때 이전 pt 경로
+
+test:
+  model_path: checkpoints/run_20250327_165836/epoch_10.pt
 
